@@ -2,3 +2,4 @@ prefect==0.15.9
 pandas~=2.2.2
 requests~=2.26.0
 pendulum~=3.0.0
+pytz~=2024.1
