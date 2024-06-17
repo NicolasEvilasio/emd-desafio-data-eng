@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
+import os
 from io import StringIO
 import pandas as pd
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
+import psycopg2
 from prefect import task
+from prefect.engine.signals import SKIP
 import requests
 from requests.exceptions import RequestException
 from pipelines.utils import log
@@ -87,10 +93,57 @@ def save_report(dataframe: pd.DataFrame) -> None:
     """
     global global_quantidade_execucoes
 
-    if global_quantidade_execucoes == 10:
+    if global_quantidade_execucoes == 2:
         timestamp = datetime.now(timezone).strftime("%Y%m%d%H%M")  # Obter data e hora atual para nomear o arquivo
         dataframe.to_csv(f"./data/brt_gps_{timestamp}.csv", index=False)
         log("Dados salvos em report.csv com sucesso!")
-        global_quantidade_execucoes = 0
+        # global_quantidade_execucoes = 0
     else:
         log(f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10")
+        raise SKIP("Pulando tarefa: condição específica não atendida")
+
+
+@task
+def load_to_postgres(dataframe: pd.DataFrame) -> None:
+    """
+    Carrega os dados de um pandas.DataFrame em um PostgreSQL database.
+
+    Args:
+        dataframe: parse_data(data)
+    """
+    global global_quantidade_execucoes
+    load_dotenv()
+
+    if global_quantidade_execucoes == 10:
+        try:
+            # Parâmetros de conexão com o PostgreSQL
+            db_host = os.getenv('DB_HOST')
+            db_port = os.getenv('DB_PORT')
+            db_database = os.getenv('DB_DATABASE')
+            db_user = os.getenv('DB_USER')
+            db_password = os.getenv('DB_PASSWORD')
+
+            # Criar uma conexão com o PostgreSQL usando SQLAlchemy
+            engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_database}')
+
+            # Nome da tabela no PostgreSQL
+            table_name = "brt_data"
+
+            # Inserir dados no PostgreSQL usando df.to_sql()
+            dataframe.to_sql(table_name, engine, if_exists='append', index=False)
+
+            log('Dados carregados no PostgreSQL.')
+
+            global_quantidade_execucoes = 0 # resetar a contagem
+
+        except KeyError as e:
+            # Capturar falha na definição de alguma variável de ambiente
+            raise ValueError(f"Erro ao interagir com o PostgreSQL: {e}")
+
+        except SQLAlchemyError as e:
+            # Se ocorrer um erro de SQLAlchemy ao conectar ou inserir dados
+            raise RuntimeError(f"Erro ao interagir com o PostgreSQL: {e}")
+
+        except Exception as e:
+            # Para outros erros não especificados
+            raise RuntimeError(f"Erro inesperado ao carregar dados para PostgreSQL: {e}")
