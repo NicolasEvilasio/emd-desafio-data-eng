@@ -1,0 +1,36 @@
+version: 2
+
+sources:
+  - name: public
+    tables:
+      - name: brt_data
+
+
+models:
+  - name: brt_last_info
+    description: "Informação mais recente sobre a localização e velocidade do BRT"
+    columns:
+      - name: codigo
+        description: "Código do BRT"
+        tests:
+          - not_null
+      - name: data
+        description: "Data da informação"
+        tests:
+          - not_null
+      - name: hora
+        description: "Hora da informação"
+        tests:
+          - not_null
+      - name: latitude
+        description: "latitude do BRT da data e hora da captura"
+        tests:
+          - not_null
+      - name: longitude
+        description: "Longitude do BRT da data e hora da captura"
+        tests:
+          - not_null
+      - name: velocidade
+        description: "Velocidade do BRT da data e hora da captura"
+        tests:
+          - not_null

@@ -1,0 +1,12 @@
+dbt_brt:
+  outputs:
+    dev:
+      dbname: mydb
+      host: localhost
+      pass: password
+      port: 5400
+      schema: public
+      threads: 10
+      type: postgres
+      user: user
+  target: dev
