@@ -2,7 +2,7 @@
 ___
 Repositório de instrução para o desafio técnico para vaga de Pessoa Engenheira de Dados no Escritório de Dados do Rio de Janeiro
 
-## Descrição do desafio
+## Descrição do Desafio
 ___
 O desafio consiste em criar uma pipeline para capturar, estruturar, armazenar e transformar dados de uma API instantânea de GPS de ônibus BRT. Os dados devem ser coletados minuto a minuto, armazenados em um arquivo CSV e carregados em uma tabela PostgreSQL. Além disso, deve ser criada uma tabela derivada usando DBT, contendo o ID do ônibus, sua posição e velocidade.
 
@@ -37,42 +37,48 @@ ___
 Para executar o projeto, siga os passos abaixo:
 
 1. Clone o repositório:  
-```
-git clone https://github.com/seu-usuario/repositorio-do-desafio.git
-```
-  
+    ```bash
+    git clone https://github.com/seu-usuario/repositorio-do-desafio.git
+    ```
+
 2. Crie um ambiente virtual utilizando `venv`:  
-```
-python -m venv venv
-```
+    ```bash
+    python -m venv venv
+    ```
 
 3. Ative o ambiente virtual:
 
-- No Windows:
-
-  ```
-  venv\Scripts\activate
-  ```
-
-- No Linux/macOS:
-
-  ```
-  source venv/bin/activate
-  ```
+    - No Windows:
+      ```bash
+      venv\Scripts\activate
+      ```
+    
+    - No Linux/macOS:
+      ```bash
+      source venv/bin/activate
+      ```
 
 4. Instale as dependências do projeto:
-```
-pip install -r requirements.txt
-```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-5. Inicie o Docker e o PostgreSQL:
-```
-docker-compose up -d
-```
+5. Crie um arquivo `.env` na pasta root do projeto, com o seguinte formato:  
+    Altere os dados conforme sua necessidade.
+    ```env
+    DB_HOST=localhost
+    DB_PORT=5400
+    DB_USER=user
+    DB_PASSWORD=password
+    DB_DATABASE=mydb
+    ```
 
-6. Execute o arquivo `run.py` para iniciar a pipeline:
-```
-python run.py
-```
+6. Inicie o Docker e o PostgreSQL:
+    ```bash
+    docker-compose up -d
+    ```
 
-
+7. Execute o arquivo `run.py` para iniciar a pipeline:
+    ```bash
+    python run.py
+    ```
