@@ -24,6 +24,9 @@ ___
 4. **Armazenamento no PostgreSQL**
    - Utilizando uma instância local do PostgreSQL (Dockerizada), os dados do CSV serão carregados em uma tabela específica.
 
+5. **Tabela Derivada com DBT**
+   - A cada 10 minutos, a materialized view é atualizada na instância local do Postgres (Dockerizada).
+
 ### Requisitos
 ___
 - Python 3.9
@@ -83,12 +86,9 @@ Para executar o projeto, siga os passos abaixo:
     python run.py
     ```
 
-8. Navegue até a pasta do projeto dbt (dbt_brt)
-```bash
-cd dbt_brt
-```
-
-9. Execute o comando `dbt run` e uma view, chamada `vw_brt_last_info` será criada no banco de dados.
+8. Aguarde a execução do código.
+A partir do 10º minuto será criada uma tabela no postgres, chamada `brt_data` e uma materialized view, chamada `vw_brt_last_info`
 - Clique [aqui](https://github.com/NicolasEvilasio/emd-desafio-data-eng/blob/master/dbt_brt/models/mart/vw_brt_last_info.sql) para abrir o arquivo vw_brt_last_info.sql  
 - A view retornar os dados, garantindo que não há duplicidades e que é a informação mais atual:
 - ![Imagem do resultado da query da view vw_brt_last_info](imgs/vw_brt_last_info.png)
+- 
