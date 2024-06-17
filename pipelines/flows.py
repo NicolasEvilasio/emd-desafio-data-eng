@@ -6,19 +6,21 @@ from prefect.storage import Local
 from pipelines.tasks import (
     download_data,
     parse_data,
-    save_report
+    save_report,
+    load_to_postgres
 )
 from pipelines.schedules import every_minute_schedule
 # from pipelines import *
 
 
-with Flow("EMD: BRT - Ingerir dados da API BRT") as brt_flow:
+with Flow("EMD: BRT - Ingerir dados da API BRT", schedule=every_minute_schedule) as brt_flow:
     # Tasks
     data = download_data()
     df = parse_data(data)
     save_report(df)
+    load_to_postgres(df)
 
 
-brt_flow.schedule = every_minute_schedule  # atribui o scheduler do flow ao que foi definido no arquivo schedules.py
+# brt_flow.schedule = every_minute_schedule  # atribui o scheduler do flow ao que foi definido no arquivo schedules.py
 brt_flow.storage = Local('./data')
 brt_flow.run_config = LocalRun()
