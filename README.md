@@ -1,43 +1,81 @@
 # Desafio de Data Engineer - EMD
-
+___
 Repositório de instrução para o desafio técnico para vaga de Pessoa Engenheira de Dados no Escritório de Dados do Rio de Janeiro
 
 ## Descrição do desafio
+___
+O desafio consiste em criar uma pipeline para capturar, estruturar, armazenar e transformar dados de uma API instantânea de GPS de ônibus BRT. Os dados devem ser coletados minuto a minuto, armazenados em um arquivo CSV e carregados em uma tabela PostgreSQL. Além disso, deve ser criada uma tabela derivada usando DBT, contendo o ID do ônibus, sua posição e velocidade.
 
-Neste desafio você deverá capturar, estruturar, armazenar e transformar dados de uma API instantânea. A API consiste nos dados de GPS do BRT que são gerados na hora da consulta com o último sinal transmitido por cada veículo.
+## Solução Proposta
+___
+### Passos da Solução
 
-Para o desafio, será necessário construir uma pipeline que captura os dados minuto a minuto e gera um arquivo no formato CSV. O arquivo gerado deverá conter no mínimo 10 minutos de dados capturados (estruture os dados da maneira que achar mais conveniente), então carregue os dados para uma tabela no Postgres. Por fim, crie uma tabela derivada usando o DBT. A tabela derivada deverá conter o ID do onibus, posição e sua a velocidade.
+1. **Captura de Dados**
+   - A API de GPS do BRT será consultada a cada minuto.
+   - Os dados serão armazenados temporariamente em memória, em um dataframe.
 
-A pipeline deverá ser construída subindo uma instância local do Prefect (em Python). Utilize a versão *0.15.9* do Prefect.
+2. **Estruturação dos Dados**
+   - Os dados serão estruturados conforme necessário para atender aos requisitos de armazenamento e transformação.
 
-## O que iremos avaliar
+3. **Armazenamento em CSV**
+   - A cada 10 minutos, os dados capturados serão consolidados em um arquivo CSV.
+   - Um novo arquivo CSV será gerado a cada intervalo de 10 minutos.
 
-- Completude: A solução proposta atende a todos os requisitos do desafio?
-- Simplicidade: A solução proposta é simples e direta? É fácil de entender e trabalhar?
-- Organização: A solução proposta é organizada e bem documentada? É fácil de navegar e encontrar o que se procura?
-- Criatividade: A solução proposta é criativa? Apresenta uma abordagem inovadora para o problema proposto?
-- Boas práticas: A solução proposta segue boas práticas de Python, Git, Docker, etc.?
+4. **Armazenamento no PostgreSQL**
+   - Utilizando uma instância local do PostgreSQL (Dockerizada), os dados do CSV serão carregados em uma tabela específica.
 
-## Atenção
+5. **Transformação com DBT**
+   - Será criada uma tabela derivada utilizando DBT, que conterá o ID do ônibus, posição e velocidade.
 
-- A solução desse desafio deve ser publicada em um fork deste repositório no GitHub.
-- O link do repositório deve ser enviado até às 23:59, horário de Brasília, do dia 26 de julho de 2023 (quarta-feira) para o e-mail utilizado para contato com o assunto "Desafio Data Engineer - EMD".
-- Você deve ser capaz de apresentar sua solução, explicando como a idealizou, caso seja aprovado(a) para a próxima etapa.
+### Requisitos
+___
+- Python 3.9
+- pip
+- PostgreSQL
+- Docker
+- Venv
 
-## Links de referência / utilidades
+### Execução do Projeto
+___
+Para executar o projeto, siga os passos abaixo:
 
-- Documentação [Prefect](https://docs-v1.prefect.io/)
-- Documentação [DBT](https://docs.getdbt.com/docs/introduction)
-- Instalar e configurar o
-   [Prefect Server](https://docs.prefect.io/orchestration/getting-started/install.html)
-   locamente com um [Docker Agent](https://docs.prefect.io/orchestration/agents/docker.html)
-- Construir a pipeline de captura da [API do
-   BRT](https://dados.mobilidade.rio/gps/brt)
-- Repositório pipelines do [Escritorio de Dados](https://github.com/prefeitura-rio/pipelines)
-- Repositório de modelos DBT do [Escritorio de Dados](https://github.com/prefeitura-rio/queries-datario)
+1. Clone o repositório:  
+```
+git clone https://github.com/seu-usuario/repositorio-do-desafio.git
+```
+  
+2. Crie um ambiente virtual utilizando `venv`:  
+```
+python -m venv venv
+```
 
+3. Ative o ambiente virtual:
 
-## Dúvidas?
+- No Windows:
 
-Fale conosco pelo e-mail que foi utilizado para o envio desse desafio.
+  ```
+  venv\Scripts\activate
+  ```
+
+- No Linux/macOS:
+
+  ```
+  source venv/bin/activate
+  ```
+
+4. Instale as dependências do projeto:
+```
+pip install -r requirements.txt
+```
+
+5. Inicie o Docker e o PostgreSQL:
+```
+docker-compose up -d
+```
+
+6. Execute o arquivo `run.py` para iniciar a pipeline:
+```
+python run.py
+```
+
 
