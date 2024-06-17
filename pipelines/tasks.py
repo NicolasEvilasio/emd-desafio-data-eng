@@ -13,6 +13,7 @@ from requests.exceptions import RequestException
 from pipelines.utils import log
 from datetime import datetime
 import pytz
+import subprocess
 
 
 global_quantidade_execucoes = 0
@@ -147,3 +148,43 @@ def load_to_postgres(dataframe: pd.DataFrame) -> None:
         except Exception as e:
             # Para outros erros não especificados
             raise RuntimeError(f"Erro inesperado ao carregar dados para PostgreSQL: {e}")
+    else:
+        log(f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10")
+        raise SKIP("Pulando tarefa: condição específica não atendida")
+
+
+@task
+def run_dbt() -> str:
+    """
+    Executa o DBT no diretório do projeto DBT e retorna a saída padrão.
+
+    Esta tarefa muda para o diretório 'dbt_brt', executa o comando 'dbt run',
+    e então retorna ao diretório original. A saída padrão do comando 'dbt run'
+    é capturada e retornada como uma string.
+
+    Returns:
+        str: A saída padrão do comando 'dbt run'.
+
+    Exemplo:
+         run_dbt()
+        'Running with dbt=0.18.1\n...\nDone.'
+    """
+    global global_quantidade_execucoes
+
+    if global_quantidade_execucoes == 10:
+        # Salvar o diretório raíz do projeto
+        current_dir = os.getcwd()
+
+        # Alterar para a pasta do dbt
+        os.chdir('dbt_brt')
+
+        # Executar o comando dbt run
+        result = subprocess.run(["dbt", "run"], capture_output=True, text=True)
+
+        # Retornar para a pasta raíz do projeto
+        os.chdir(current_dir)
+
+        return result.stdout
+    else:
+        log(f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10")
+        raise SKIP("Pulando tarefa: condição específica não atendida")
