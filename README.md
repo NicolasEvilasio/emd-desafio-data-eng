@@ -38,7 +38,7 @@ Para executar o projeto, siga os passos abaixo:
 
 1. Clone o repositório:  
     ```bash
-    git clone https://github.com/seu-usuario/repositorio-do-desafio.git
+    git clone https://github.com/NicolasEvilasio/emd-desafio-data-eng
     ```
 
 2. Crie um ambiente virtual utilizando `venv`:  
