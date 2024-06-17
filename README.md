@@ -24,9 +24,6 @@ ___
 4. **Armazenamento no PostgreSQL**
    - Utilizando uma instância local do PostgreSQL (Dockerizada), os dados do CSV serão carregados em uma tabela específica.
 
-5. **Transformação com DBT**
-   - Será criada uma tabela derivada utilizando DBT, que conterá o ID do ônibus, posição e velocidade.
-
 ### Requisitos
 ___
 - Python 3.9
