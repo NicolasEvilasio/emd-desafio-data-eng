@@ -16,17 +16,17 @@ last_info AS (
 )
 -- Consulta principal
 SELECT DISTINCT
-	codigo,
-	DATE(TO_TIMESTAMP("dataHora" / 1000) AT TIME ZONE 'UTC' AT TIME ZONE '-03:00') AS "data",
-	TO_CHAR(TO_TIMESTAMP("dataHora" / 1000) AT TIME ZONE 'UTC' AT TIME ZONE '-03:00', 'HH24:MI:SS') AS "hora",
-	latitude,
-	longitude,
-	velocidade
+	b.codigo,
+	DATE(TO_TIMESTAMP(b."dataHora" / 1000) AT TIME ZONE 'UTC' AT TIME ZONE '-03:00') AS "data",
+	TO_CHAR(TO_TIMESTAMP(b."dataHora" / 1000) AT TIME ZONE 'UTC' AT TIME ZONE '-03:00', 'HH24:MI:SS') AS "hora",
+	b.latitude,
+	b.longitude,
+	b.velocidade
 FROM
-	source
-WHERE
-	codigo IN (SELECT codigo FROM last_info)
-	AND "dataHora" IN (SELECT "dataHora" FROM last_info)
+	source b
+JOIN
+	last_info l ON b.codigo = l.codigo AND b."dataHora" = l.max_data
 ORDER BY
+    codigo,
 	"data" DESC,
 	hora DESC
