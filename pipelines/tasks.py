@@ -93,7 +93,7 @@ def save_report(dataframe: pd.DataFrame) -> None:
     """
     global global_quantidade_execucoes
 
-    if global_quantidade_execucoes == 2:
+    if global_quantidade_execucoes == 10:
         timestamp = datetime.now(timezone).strftime("%Y%m%d%H%M")  # Obter data e hora atual para nomear o arquivo
         dataframe.to_csv(f"./data/brt_gps_{timestamp}.csv", index=False)
         log("Dados salvos em report.csv com sucesso!")
