@@ -3,7 +3,7 @@ version: '3.1'
 services:
   postgres:
     image: postgres:latest
-    container_name: my_postgres
+    container_name: emd_desafio_postgres
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -12,6 +12,22 @@ services:
       - "${DB_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    command: [ "python", "run.py" ]
+    volumes:
+      - ./pipelines:/app/pipelines
+      - ./data:/app/data
+      - ./dbt_brt:/app/dbt_brt
+    depends_on:
+      - postgres
+    environment:
+      - DB_HOST= ${DB_HOST}
+      - DB_PORT= ${DB_PORT}
+      - DB_DATABASE= ${DB_DATABASE}
+      - DB_USER= ${DB_USER}
+      - DB_PASSWORD= ${DB_PASSWORD}
 
 volumes:
   pgdata:
