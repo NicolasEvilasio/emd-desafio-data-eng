@@ -11,4 +11,4 @@ class constants(Enum):  # pylint: disable=c0103
     DATASET_ID = "emd-desafio-data-eng"
     TABLE_ID = "brt_dados_gps"
 
-    EMD_DESAFIO_AGENT_LABEL = 'emd-desafio-agent'
+    EMD_DESAFIO_AGENT_LABEL = 'brt-flow'
