@@ -7,7 +7,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 import psycopg2
 from prefect import task
-from prefect.engine.signals import SKIP
+from prefect.engine.runner import ENDRUN
+from prefect.engine.state import Skipped
+# from prefect.engine.signals import SKIP
 import requests
 from requests.exceptions import RequestException
 from pipelines.utils import log
@@ -98,10 +100,15 @@ def save_report(dataframe: pd.DataFrame) -> None:
         timestamp = datetime.now(timezone).strftime("%Y%m%d%H%M")  # Obter data e hora atual para nomear o arquivo
         dataframe.to_csv(f"./data/brt_gps_{timestamp}.csv", index=False)
         log("Dados salvos em report.csv com sucesso!")
-        # global_quantidade_execucoes = 0
+        global_quantidade_execucoes = 0
     else:
-        log(f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10")
-        raise SKIP("Pulando tarefa: condição específica não atendida")
+        log_msg = f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10"
+        log(log_msg)
+
+        skip = Skipped(message=log_msg)
+        raise ENDRUN(state=skip)
+    
+        # raise SKIP("Pulando tarefa: condição específica não atendida")
 
 
 @task
@@ -115,42 +122,53 @@ def load_to_postgres(dataframe: pd.DataFrame) -> None:
     global global_quantidade_execucoes
     load_dotenv()
 
-    if global_quantidade_execucoes >= 10:
-        try:
-            # Parâmetros de conexão com o PostgreSQL
-            db_host = os.getenv('DB_HOST')
-            db_port = os.getenv('DB_PORT')
-            db_database = os.getenv('DB_DATABASE')
-            db_user = os.getenv('DB_USER')
-            db_password = os.getenv('DB_PASSWORD')
+    # if global_quantidade_execucoes == 10:
+    try:
+        # Parâmetros de conexão com o PostgreSQL
+        db_host = os.getenv('DB_HOST')
+        db_port = os.getenv('DB_PORT')
+        db_database = os.getenv('DB_DATABASE')
+        db_user = os.getenv('DB_USER')
+        db_password = os.getenv('DB_PASSWORD')
 
-            # Criar uma conexão com o PostgreSQL usando SQLAlchemy
-            engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_database}')
+        # Testar conexão antes de prosseguir
+        test_conn = psycopg2.connect(
+            host=db_host,
+            port=db_port,
+            database=db_database,
+            user=db_user,
+            password=db_password
+        )
+        log("Conexão com o PostgreSQL estabelecida com sucesso!")
+        test_conn.close()
+        
+        # Criar uma conexão com o PostgreSQL usando SQLAlchemy
+        engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_database}')
 
-            # Nome da tabela no PostgreSQL
-            table_name = "brt_data"
+        # Nome da tabela no PostgreSQL
+        table_name = "brt_data"
 
-            # Inserir dados no PostgreSQL usando df.to_sql()
-            dataframe.to_sql(table_name, engine, if_exists='append', index=False)
+        # Inserir dados no PostgreSQL usando df.to_sql()
+        dataframe.to_sql(table_name, con=engine, schema='bronze', if_exists='append', index=False)
 
-            log('Dados carregados no PostgreSQL.')
+        log('Dados carregados no PostgreSQL.')
 
-            global_quantidade_execucoes = 0 # resetar a contagem
+        # global_quantidade_execucoes = 0 # resetar a contagem
 
-        except KeyError as e:
-            # Capturar falha na definição de alguma variável de ambiente
-            raise ValueError(f"Erro ao interagir com o PostgreSQL: {e}")
+    except KeyError as e:
+        # Capturar falha na definição de alguma variável de ambiente
+        raise ValueError(f"Erro ao interagir com o PostgreSQL: {e}")
 
-        except SQLAlchemyError as e:
-            # Se ocorrer um erro de SQLAlchemy ao conectar ou inserir dados
-            raise RuntimeError(f"Erro ao interagir com o PostgreSQL: {e}")
+    except SQLAlchemyError as e:
+        # Se ocorrer um erro de SQLAlchemy ao conectar ou inserir dados
+        raise RuntimeError(f"Erro ao interagir com o PostgreSQL: {e}")
 
-        except Exception as e:
-            # Para outros erros não especificados
-            raise RuntimeError(f"Erro inesperado ao carregar dados para PostgreSQL: {e}")
-    else:
-        log(f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10")
-        raise SKIP("Pulando tarefa: condição específica não atendida")
+    except Exception as e:
+        # Para outros erros não especificados
+        raise RuntimeError(f"Erro inesperado ao carregar dados para PostgreSQL: {e}")
+    # else:
+    #     log(f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10")
+    #     raise SKIP("Pulando tarefa: condição específica não atendida")
 
 
 @task
@@ -169,22 +187,22 @@ def run_dbt() -> str:
          run_dbt()
         'Running with dbt=0.18.1\n...\nDone.'
     """
-    global global_quantidade_execucoes
+    # global global_quantidade_execucoes
 
-    if global_quantidade_execucoes >= 10:
-        # Salvar o diretório raíz do projeto
-        current_dir = os.getcwd()
+    # if global_quantidade_execucoes == 10:
+    # Salvar o diretório raíz do projeto
+    current_dir = os.getcwd()
 
-        # Alterar para a pasta do dbt
-        os.chdir('dbt_brt')
+    # Alterar para a pasta do dbt
+    os.chdir('dbt_brt')
 
-        # Executar o comando dbt run
-        result = subprocess.run(["dbt", "run"], capture_output=True, text=True)
+    # Executar o comando dbt run
+    result = subprocess.run(["dbt", "run", "--target", "gold", "--select", "gold"], capture_output=True, text=True)
 
-        # Retornar para a pasta raíz do projeto
-        os.chdir(current_dir)
+    # Retornar para a pasta raíz do projeto
+    os.chdir(current_dir)
 
-        return result.stdout
-    else:
-        log(f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10")
-        raise SKIP("Pulando tarefa: condição específica não atendida")
+    return result.stdout
+    # else:
+    #     log(f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10")
+    #     raise SKIP("Pulando tarefa: condição específica não atendida")
