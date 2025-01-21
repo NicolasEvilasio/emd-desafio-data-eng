@@ -2,7 +2,7 @@ FROM python:3.10
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y netcat-openbsd
+RUN apt-get update && apt-get install -y netcat-openbsd postgresql-client
 
 # Configurar pip para usar mirrors mais rápidos e aumentar timeout
 RUN pip config set global.index-url https://pypi.org/simple/ && \

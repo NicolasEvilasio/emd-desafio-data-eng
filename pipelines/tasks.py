@@ -96,11 +96,11 @@ def save_report(dataframe: pd.DataFrame) -> None:
     """
     global global_quantidade_execucoes
 
-    if global_quantidade_execucoes == 2:
+    if global_quantidade_execucoes == 10:
         timestamp = datetime.now(timezone).strftime("%Y%m%d%H%M")  # Obter data e hora atual para nomear o arquivo
         dataframe.to_csv(f"./data/brt_gps_{timestamp}.csv", index=False)
         log("Dados salvos em report.csv com sucesso!")
-        # global_quantidade_execucoes = 0
+        global_quantidade_execucoes = 0
     else:
         log_msg = f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10"
         log(log_msg)
@@ -153,7 +153,7 @@ def load_to_postgres(dataframe: pd.DataFrame) -> None:
 
         log('Dados carregados no PostgreSQL.')
 
-        global_quantidade_execucoes = 0 # resetar a contagem
+        # global_quantidade_execucoes = 0 # resetar a contagem
 
     except KeyError as e:
         # Capturar falha na definição de alguma variável de ambiente
