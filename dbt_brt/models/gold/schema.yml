@@ -1,13 +1,15 @@
 version: 2
 
 sources:
-  - name: public
+  - name: bronze
+    database: brt_db
+    schema: bronze
     tables:
       - name: brt_data
 
 
 models:
-  - name: brt_last_info
+  - name: vw_brt_last_info
     description: "Informação mais recente sobre a localização e velocidade do BRT"
     columns:
       - name: codigo

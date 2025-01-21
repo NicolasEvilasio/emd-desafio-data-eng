@@ -1,4 +1,15 @@
+# Variáveis de ambiente
+.env
 
+# DBT
+logs/
+target/
+dbt_packages/
+.user.yml
+
+# Python
+__pycache__/
+*.pyc
 target/
 dbt_packages/
 logs/

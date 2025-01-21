@@ -3,7 +3,7 @@ WITH source AS (
     SELECT
         *
     FROM
-        {{source ('public', 'brt_data')}}
+        {{source ('bronze', 'brt_data')}}
 ),
 last_info AS (
 	SELECT DISTINCT

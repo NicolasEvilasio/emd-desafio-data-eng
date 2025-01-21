@@ -17,10 +17,18 @@ from pipelines.schedules import every_minute_schedule
 with Flow("EMD: BRT - Ingerir dados da API BRT", schedule=every_minute_schedule) as brt_flow:
     # Tasks
     data = download_data()
+    
     df = parse_data(data)
-    save_report(df)
-    load_to_postgres(df)
-    run_dbt()
+    df.set_upstream(data)
+    
+    task_save_report = save_report(df)
+    task_save_report.set_upstream(df)
+    
+    task_load_to_postgres = load_to_postgres(df)
+    task_load_to_postgres.set_upstream(task_save_report)
+    
+    task_run_dbt = run_dbt()
+    task_run_dbt.set_upstream(task_load_to_postgres)
 
 
 # brt_flow.schedule = every_minute_schedule  # atribui o scheduler do flow ao que foi definido no arquivo schedules.py
