@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16
-    container_name: my_postgres
+    container_name: brt_postgres
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -17,9 +17,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - brt-network
     
-  app:
+  prefect:
     build: .
+    container_name: brt_prefect
     depends_on:
       postgres:
         condition: service_healthy
@@ -31,7 +34,17 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
     volumes:
       - ./:/app
+      - prefect_data:/root/.prefect
+    networks:
+      - brt-network
 
 volumes:
   pgdata:
-    external: false
+    name: brt_pgdata
+  prefect_data:
+    name: brt_prefect_data
+
+networks:
+  brt-network:
+    name: brt_network
+    driver: bridge
