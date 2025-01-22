@@ -18,7 +18,7 @@ with Flow(
     name="EMD: BRT - Ingerir dados da API BRT", 
     schedule=every_minute_schedule,
     # run_config=LocalRun(labels=["brt-flow"]),
-    # storage=Local('./data')
+    storage=Local('./data')
 ) as brt_flow:
     # Tasks
     data = download_data()

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
+from genericpath import exists
 import os
-from io import StringIO
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -12,11 +12,16 @@ from prefect.engine.state import Skipped
 # from prefect.engine.signals import SKIP
 import requests
 from requests.exceptions import RequestException
+from pipelines.constants import constants
 from pipelines.utils import log
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import subprocess
-
+from pipelines.utils import (
+    redis_h_set, 
+    redis_h_get, 
+)
+from pathlib import Path
 
 global_quantidade_execucoes = 0
 global_df = pd.DataFrame()
@@ -57,7 +62,6 @@ def download_data() -> list[dict]:
         response.raise_for_status()
         data = response.json().get("veiculos")
         log("Dados baixados com sucesso!")
-        global_quantidade_execucoes += 1
 
     except RequestException as err:
         log(f"Request error ocurred: {err}")
@@ -87,30 +91,69 @@ def parse_data(data: list[dict]) -> pd.DataFrame:
 
 
 @task
-def save_report(dataframe: pd.DataFrame) -> None:
+def save_report(dataframe: pd.DataFrame, batch_minutes_interval: int=10) -> None:
     """
     Salva o DataFrame em um arquivo CSV.
 
     Args:
         dataframe (pd.DataFrame): DataFrame do Pandas.
     """
-    global global_quantidade_execucoes
-
-    if global_quantidade_execucoes >= 10:
-        timestamp = datetime.now(timezone).strftime("%Y%m%d%H%M")  # Obter data e hora atual para nomear o arquivo
-        dataframe.to_csv(f"./data/brt_gps_{timestamp}.csv", index=False)
-        log("Dados salvos em report.csv com sucesso!")
-        global_quantidade_execucoes = 0
+    redis_last_date = redis_h_get(
+        name=constants.REDIS_BRT_GPS_NAME.value, 
+        key=constants.REDIS_BRT_GPS_KEY_LAST_FILE_TIMESTAMP_CREATED.value
+    )
+    
+    current_timestamp = datetime.now(pytz.utc)  # Obter data e hora atual em UTC para nomear o arquivo
+    
+    if redis_last_date is None or str(current_timestamp - timedelta(minutes=batch_minutes_interval)) > redis_last_date:
+        current_timestamp_str = current_timestamp.strftime("%Y%m%d_%H%M")
+        file_name = f"brt_gps_{current_timestamp_str}.csv"
+        
+        dataframe.to_csv(Path.cwd() / "data" / file_name, index=False, mode="w")
+        log(f"Dados salvos em {file_name} com sucesso!")
+        
+        # reseta o timestamp do último arquivo salvo
+        redis_h_set(
+            name=constants.REDIS_BRT_GPS_NAME.value, 
+            values={
+                constants.REDIS_BRT_GPS_KEY_LAST_FILE_TIMESTAMP_CREATED.value: str(current_timestamp)
+            }
+        )
+        
+        if not redis_last_date:
+            minutes_passed = 1
+        
+            log_msg = f"Coletando dados para carregar no PostgreSQL - {minutes_passed} / {batch_minutes_interval} min"
+            log(log_msg)
+            skip = Skipped(message=log_msg)
+            raise ENDRUN(state=skip)
+            
+        else:
+            minutes_passed = round((current_timestamp - datetime.fromisoformat(redis_last_date)).total_seconds() / 60)
+            log_msg = f"Dados suficientes coletados para carregar no PostgreSQL - {minutes_passed} / {batch_minutes_interval} min"
+            log(log_msg)
+            
     else:
-        log_msg = f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10"
+        redis_last_date_datetime = datetime.strptime(redis_last_date, "%Y-%m-%d %H:%M:%S.%f%z")
+        redis_last_date_str = redis_last_date_datetime.strftime("%Y%m%d_%H%M")
+        file_name = f"brt_gps_{redis_last_date_str}.csv"
+        
+        if exists(Path.cwd() / "data" / file_name):
+            dataframe.to_csv(Path.cwd() / "data" / file_name, index=False, header=False, mode="a")
+        else:
+            dataframe.to_csv(Path.cwd() / "data" / file_name, index=False, mode="w")
+        
+        log(f"Dados salvos em {file_name} com sucesso!")
+    
+        minutes_passed = round((current_timestamp - datetime.fromisoformat(redis_last_date)).total_seconds() / 60)
+               
+        log_msg = f"Coletando dados para carregar no PostgreSQL - {minutes_passed} / {batch_minutes_interval} min"
         log(log_msg)
-
+        
         skip = Skipped(message=log_msg)
         raise ENDRUN(state=skip)
-    
-        # raise SKIP("Pulando tarefa: condição específica não atendida")
-
-
+      
+        
 @task
 def load_to_postgres(dataframe: pd.DataFrame) -> None:
     """
@@ -122,7 +165,6 @@ def load_to_postgres(dataframe: pd.DataFrame) -> None:
     global global_quantidade_execucoes
     load_dotenv()
 
-    # if global_quantidade_execucoes == 10:
     try:
         # Parâmetros de conexão com o PostgreSQL
         db_host = os.getenv('DB_HOST')
@@ -153,7 +195,6 @@ def load_to_postgres(dataframe: pd.DataFrame) -> None:
 
         log('Dados carregados no PostgreSQL.')
 
-        # global_quantidade_execucoes = 0 # resetar a contagem
 
     except KeyError as e:
         # Capturar falha na definição de alguma variável de ambiente
@@ -166,9 +207,6 @@ def load_to_postgres(dataframe: pd.DataFrame) -> None:
     except Exception as e:
         # Para outros erros não especificados
         raise RuntimeError(f"Erro inesperado ao carregar dados para PostgreSQL: {e}")
-    # else:
-    #     log(f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10")
-    #     raise SKIP("Pulando tarefa: condição específica não atendida")
 
 
 @task
@@ -187,9 +225,6 @@ def run_dbt() -> str:
          run_dbt()
         'Running with dbt=0.18.1\n...\nDone.'
     """
-    # global global_quantidade_execucoes
-
-    # if global_quantidade_execucoes == 10:
     # Salvar o diretório raíz do projeto
     current_dir = os.getcwd()
 
@@ -203,6 +238,3 @@ def run_dbt() -> str:
     os.chdir(current_dir)
 
     return result.stdout
-    # else:
-    #     log(f"Coletando dados para formar o CSV - {global_quantidade_execucoes} / 10")
-    #     raise SKIP("Pulando tarefa: condição específica não atendida")

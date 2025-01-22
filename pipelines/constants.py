@@ -12,3 +12,9 @@ class constants(Enum):  # pylint: disable=c0103
     TABLE_ID = "brt_dados_gps"
 
     EMD_DESAFIO_AGENT_LABEL = 'brt-flow'
+    
+    ### REDIS ###
+    REDIS_BRT_GPS_NAME = 'redis_brt_gps'
+    REDIS_BRT_GPS_KEY_EXECUTIONS_QUANTITY = 'executions_quantity'
+    REDIS_BRT_GPS_KEY_LAST_FILE_TIMESTAMP_CREATED = 'last_file_timestamp_created'
+    

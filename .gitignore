@@ -151,3 +151,6 @@ dmypy.json
 # virtualenv
 *.venv/
 *.env/
+
+# User de
+dev/
