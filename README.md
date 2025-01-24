@@ -1,57 +1,122 @@
 # Desafio de Data Engineer - EMD
-___
-Repositório de instrução para o desafio técnico para vaga de Pessoa Engenheira de Dados no Escritório de Dados do Rio de Janeiro
+Pipeline de Dados em Tempo Real para Monitoramento de Ônibus BRT
+
+## Sobre o Projeto
+Este projeto foi desenvolvido como parte do desafio técnico para a posição de Engenheiro(a) de Dados no Escritório de Dados do Rio de Janeiro. O objetivo é demonstrar a capacidade de construir uma pipeline de dados robusta e escalável.
 
 ## Descrição do Desafio
-___
-O desafio consiste em criar uma pipeline para capturar, estruturar, armazenar e transformar dados de uma API instantânea de GPS de ônibus BRT. Os dados devem ser coletados minuto a minuto, armazenados em um arquivo CSV e carregados em uma tabela PostgreSQL. Além disso, deve ser criada uma tabela derivada usando DBT, contendo o ID do ônibus, sua posição e velocidade.
+O projeto consiste em desenvolver uma pipeline ETL que:
+- Captura dados em tempo real da API de GPS dos ônibus BRT
+- Estrutura e processa os dados coletados
+- Armazena os dados em diferentes camadas (CSV e PostgreSQL)
+- Transforma os dados utilizando dbt para análises
 
-## Solução Proposta
-___
-A solução agora é totalmente Dockerizada, o que significa que todo o processo é executado dentro de contêineres Docker. Isso simplifica a configuração e execução do projeto, pois o usuário só precisa ter o Docker instalado e pode iniciar o projeto com um único comando.
+## Arquitetura da Solução
+A solução foi implementada como um sistema distribuído utilizando containers Docker e orquestrada pelo Prefect.
 
-### Passos da Solução
+### Componentes Principais
 
-1. **Captura de Dados**
-   - A API de GPS do BRT será consultada a cada minuto.
-   - Os dados serão armazenados temporariamente em memória, em um dataframe.
+#### Infraestrutura
+- **Docker**: Containerização e isolamento dos serviços
+- **Prefect**: Orquestração e monitoramento dos workflows
+- **PostgreSQL**: Armazenamento dos dados processados
+- **Redis**: Cache e gerenciamento de estado
 
-2. **Estruturação dos Dados**
-   - Os dados serão estruturados conforme necessário para atender aos requisitos de armazenamento e transformação.
+#### Serviços do Prefect
+![Prefect_Architecture](imgs/prefect_architecture.png)
 
-3. **Armazenamento em CSV**
-   - A cada 10 minutos, os dados capturados serão consolidados em um arquivo CSV.
-   - Um novo arquivo CSV será gerado a cada intervalo de 10 minutos.
+- **UI**: Dashboard para monitoramento e gestão
+- **Apollo**: API principal do servidor
+- **PostgreSQL**: Armazenamento de metadados
+- **Hasura**: API GraphQL
+- **Towel**: Utilitários de manutenção
+  - Scheduler
+  - Zombie Killer
+  - Lazarus
 
-4. **Armazenamento no PostgreSQL**
-   - Utilizando uma instância Dockerizada do PostgreSQL, os dados do CSV serão carregados em uma tabela específica.
+### Pipeline de Dados
 
-5. **Tabela Derivada com DBT**
-   - A cada 10 minutos, a materialized view é atualizada na instância Dockerizada do Postgres.
+#### 1. Ingestão (Camada Bronze)
+- Coleta de dados da API BRT a cada minuto
+- Dados incluem: ID do veículo, coordenadas GPS, velocidade e timestamp
+- Armazenamento em arquivos CSV (rotação a cada 10 minutos)
+- Carregamento para tabela PostgreSQL `bronze.brt_data`
 
-### Requisitos
-___
-- Docker  
+#### 2. Transformação (Camada Gold)
+- Processamento via dbt a cada 10 minutos
+- Criação de materialized view `gold.vw_brt_last_info`
+- Campos selecionados: ID do ônibus, posição atual e velocidade
 
+## Requisitos
+- Docker e Docker Compose
+- Conta no Redis Cloud (para cache)
 
-- **Docker Desktop para Windows:** https://docs.docker.com/desktop/install/windows-install/
+## Instalação e Execução
 
-### Execução do Projeto
-___
-Para executar o projeto, siga os passos abaixo:
+1. Clone o repositório:
+```bash
+git clone https://github.com/NicolasEvilasio/emd-desafio-data-eng.git
+```
 
-1. Clone o repositório:  
-    ```bash
-    git clone https://github.com/NicolasEvilasio/emd-desafio-data-eng
-    ```
+2. Configure as variáveis de ambiente:
+Crie um arquivo `.env` na raiz do projeto com as seguintes configurações:
 
-2. Inicie o Docker:
-    ```bash
-    docker-compose --build -d
-    ```
+```env
+# BRT DATABASE
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_DATABASE=brt_db
+DB_PORT=5432
+DB_EXTERNAL_PORT=5433
+DB_HOST=brt_postgres
 
-3. Aguarde a execução do código.
-A partir do 10º minuto será criada uma tabela no postgres, chamada `brt_data` e uma materialized view, chamada `vw_brt_last_info`
-- Clique aqui para abrir o arquivo vw_brt_last_info.sql  
-- A view retornar os dados, garantindo que não há duplicidades e que é a informação mais atual:
-- !Imagem do resultado da query da view vw_brt_last_info
+# PREFECT DATABASE
+PREFECT_DB_USER=prefect
+PREFECT_DB_PASSWORD=test-password
+PREFECT_DB_DATABASE=prefect_server
+PREFECT_DB_PORT=5434
+
+# REDIS (Insira suas credenciais do Redis Cloud)
+REDIS_HOST=
+REDIS_PORT=
+REDIS_USERNAME=
+REDIS_PASSWORD=
+```
+
+3. Inicie os serviços:
+```bash
+docker-compose --profile prefect --profile agent --profile pipeline up
+```
+
+## Monitoramento e Análise
+
+### Prefect UI
+- Acesse o dashboard em: http://localhost:8080
+- Monitore flows e tasks em tempo real
+![Prefect UI](imgs/prefect_ui.png)
+
+### Análise de Dados
+- Notebooks de exemplo disponíveis na pasta `analysis`  
+- Visualize os dados processados na view `gold.vw_brt_last_info`  
+![vw_brt_last_info](imgs/vw_brt_last_info.png)
+
+## Estrutura do Projeto
+```
+.📂
+├── 📂analysis/          # Notebooks para análise
+├── 📂data/              # CSV coletados através da API BRT
+├── 📂dbt_brt/           # Projeto dbt para transformação dos dados
+├── 📂imgs/              # Imagens do README
+├── 📂pipelines/         # Código fonte das pipelines
+├── 📜.env
+├── 📜.gitignore
+├── 📜docker-compose.yml
+├── 🐳dockerfile
+├── 📜entrypoint.sh
+├── 📜poetry.lock
+├── ⚙️pyproject.toml
+├── 📜README.md
+```
+
+## Contribuições
+Contribuições são bem-vindas! Por favor, sinta-se à vontade para submeter um Pull Request.
