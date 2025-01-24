@@ -4,14 +4,14 @@ export PGPASSWORD="${DB_PASSWORD}"
 
 # Espera o postgres ficar pronto
 echo "Waiting for postgres..."
-while ! nc -z postgres 5432; do
+while ! nc -z brt_postgres ${DB_PORT}; do
   sleep 5
 done
 echo "PostgreSQL started"
 
 
 # Criar database
-psql -h postgres -p 5432 -U "${DB_USER}" -d postgres <<-EOSQL
+psql -h brt_postgres -p ${DB_PORT} -U "${DB_USER}" -d postgres <<-EOSQL
 DO \$\$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = '${DB_DATABASE}') THEN
@@ -22,11 +22,14 @@ END
 EOSQL
 
 # Conectar ao banco criado e criar schemas
-psql -h postgres -p 5432 -U "${DB_USER}" -d "${DB_DATABASE}" <<-EOSQL
+psql -h brt_postgres -p ${DB_PORT} -U "${DB_USER}" -d "${DB_DATABASE}" <<-EOSQL
     CREATE SCHEMA IF NOT EXISTS bronze;
     CREATE SCHEMA IF NOT EXISTS silver;
     CREATE SCHEMA IF NOT EXISTS gold;
 EOSQL
 
-# Executar a aplicação
-python run.py
+# Configurar Prefect para usar servidor local e iniciar agente
+prefect backend server
+prefect server create-tenant -n civitas || true
+prefect create project staging --skip-if-exists
+prefect agent local start --name 'worker' -l 'pipelines' --no-hostname-label

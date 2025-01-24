@@ -3,6 +3,7 @@ from prefect import Flow, Parameter
 from prefect.run_configs import LocalRun
 from prefect.storage import Local
 
+from pipelines.constants import constants
 from pipelines.tasks import (
     download_data,
     parse_data,
@@ -17,8 +18,8 @@ from pipelines.schedules import every_minute_schedule
 with Flow(
     name="EMD: BRT - Ingerir dados da API BRT", 
     schedule=every_minute_schedule,
-    # run_config=LocalRun(labels=["brt-flow"]),
-    storage=Local('./data')
+    run_config=LocalRun(labels=[constants.EMD_DESAFIO_AGENT_LABEL.value]),
+    storage=Local('./dev/deployments')
 ) as brt_flow:
     # Tasks
     data = download_data()
