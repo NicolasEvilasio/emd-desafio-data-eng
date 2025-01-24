@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+*.pyc
 *.py[cod]
 *$py.class
 
@@ -144,6 +145,13 @@ dmypy.json
 *.iws
 *.ipr
 
+# vscode
+.vscode/
+
 # virtualenv
 *.venv/
 *.env/
+
+# User de
+dev/
+.prefectignore
