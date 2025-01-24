@@ -201,5 +201,5 @@ services:
     networks:
       - prefect-server
       - pipeline_network
-    command: bash -c "prefect backend server && prefect create project staging --skip-if-exists && prefect register --project staging -m pipelines.flows"
+    command: bash -c "prefect backend server && prefect server create-tenant -n civitas || true && prefect create project staging --skip-if-exists && prefect register --project staging -m pipelines.flows"
 
