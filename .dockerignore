@@ -1,0 +1,17 @@
+# Ignorar pasta de dados do Postgres
+dev/brt_postgres_data
+dev/prefect_postgres_data
+dev/prefect_data
+
+# Ignorar arquivos temporários e cache
+*.pyc
+__pycache__/
+.env
+
+# Ignorar arquivos de logs
+*.log
+
+# Ignorar pastas de build de outros serviços (se houver)
+build/
+dist/
+
