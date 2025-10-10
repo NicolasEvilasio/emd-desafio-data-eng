@@ -20,7 +20,7 @@ A solução foi implementada como um sistema distribuído utilizando containers 
 - **Docker**: Containerização e isolamento dos serviços
 - **Prefect**: Orquestração e monitoramento dos workflows
 - **PostgreSQL**: Armazenamento dos dados processados
-- **Redis**: Cache e gerenciamento de estado
+- **Redis**: Cache e gerenciamento de estado (self-hosted)
 
 #### Serviços do Prefect
 ![Prefect_Architecture](imgs/prefect_architecture.png)
@@ -49,7 +49,6 @@ A solução foi implementada como um sistema distribuído utilizando containers 
 
 ## Requisitos
 - Docker e Docker Compose
-- Conta no Redis Cloud (para cache)
 
 ## Instalação e Execução
 
@@ -59,29 +58,18 @@ git clone https://github.com/NicolasEvilasio/emd-desafio-data-eng.git
 ```
 
 2. Configure as variáveis de ambiente:
-Crie um arquivo `.env` na raiz do projeto com as seguintes configurações:
+Copie o arquivo `.env.example` para `.env`:
 
-```env
-# BRT DATABASE
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_DATABASE=brt_db
-DB_PORT=5432
-DB_EXTERNAL_PORT=5433
-DB_HOST=brt_postgres
-
-# PREFECT DATABASE
-PREFECT_DB_USER=prefect
-PREFECT_DB_PASSWORD=test-password
-PREFECT_DB_DATABASE=prefect_server
-PREFECT_DB_PORT=5434
-
-# REDIS (Insira suas credenciais do Redis Cloud)
-REDIS_HOST=
-REDIS_PORT=
-REDIS_USERNAME=
-REDIS_PASSWORD=
+```bash
+cp .env.example .env
 ```
+
+O arquivo já vem com as configurações padrão para desenvolvimento local:
+- **PostgreSQL**: Armazenamento dos dados processados
+- **Redis**: Cache self-hosted (sem autenticação necessária)
+- **Prefect**: Orquestração e metadados
+
+> **Nota**: Para ambientes de produção, recomenda-se alterar as senhas padrão.
 
 3. Inicie os serviços:
 ```bash

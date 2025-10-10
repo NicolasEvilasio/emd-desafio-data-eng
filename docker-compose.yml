@@ -26,6 +26,23 @@ services:
       - pipeline_network
     profiles: [pipeline]
 
+  redis:
+    image: redis:7-alpine
+    container_name: brt_redis
+    ports:
+      - "${REDIS_EXTERNAL_PORT:-6379}:6379"
+    volumes:
+      - ./dev/redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - pipeline_network
+    profiles: [pipeline]
+
   apollo:
     command: bash -c "./post-start.sh && npm run serve"
     depends_on:
